@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="style.css">
+    <title>Stack Game</title>
+</head>
+<body>
+    <div id="title-screen">
+        <div class="content">
+            <h1>NEON STACK</h1>
+            <div class="menu-buttons">
+                <button id="play-button">PLAY</button>
+                <button id="settings-button">SETTINGS</button>
+                <button id="instructions-button">HOW TO PLAY</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-menu" class="modal">
+        <div class="content">
+            <h2>Settings</h2>
+            <div class="setting-item">
+                <label for="difficulty">Difficulty:</label>
+                <select id="difficulty">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label for="sound-toggle">Sound:</label>
+                <input type="checkbox" id="sound-toggle" checked>
+            </div>
+            <button id="settings-back">Back</button>
+        </div>
+    </div>
+
+    <div id="instructions-menu" class="modal">
+        <div class="content">
+            <h2>How to Play</h2>
+            <ul>
+                <li>Stack blocks on top of each other</li>
+                <li>Click, tap, or press SPACE to place a block</li>
+                <li>Press P to pause the game</li>
+                <li>Press R to restart</li>
+                <li>Press M to toggle sound</li>
+            </ul>
+            <button id="instructions-back">Back</button>
+        </div>
+    </div>
+
+    <div id="game-ui" style="display: none;">
+        <div id="score">0</div>
+        <div id="high-score">High Score: 0</div>
+    </div>
+
+    <div id="results">
+        <div class="content">
+            <p>You missed the block</p>
+            <p>To reset the game press R</p>
+            <button id="back-to-menu">Back to Menu</button>
+        </div>
+    </div>
+
+    <div id="pause-menu">
+        <div class="content">
+            <h2>Paused</h2>
+            <p>Press P to resume</p>
+            <button id="pause-back-to-menu">Back to Menu</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r124/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

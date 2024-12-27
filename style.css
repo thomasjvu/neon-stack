@@ -1,0 +1,326 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap");
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #1a1a1a;
+}
+
+canvas {
+    display: block;
+    width: 100vw !important;
+    height: 100vh !important;
+}
+
+body {
+  margin: 0;
+  color: white;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  cursor: pointer;
+}
+
+#instructions {
+  display: none;
+}
+
+#results,
+body:hover #instructions {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(20, 20, 20, 0.75);
+}
+
+a:visited {
+  color: inherit;
+}
+
+#results {
+  display: none;
+  cursor: default;
+}
+
+#results .content,
+#instructions .content {
+  max-width: 300px;
+  padding: 50px;
+  border-radius: 20px;
+}
+
+#results {
+}
+
+#score {
+  position: absolute;
+  color: white;
+  font-size: 3em;
+  font-weight: bold;
+  top: 30px;
+  right: 30px;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  font-family: 'Montserrat', sans-serif;
+}
+
+#youtube,
+#youtube-card {
+  display: none;
+  color: black;
+}
+
+@media (min-height: 425px) {
+  /** Youtube logo by https://codepen.io/alvaromontoro */
+  #youtube {
+    z-index: 50;
+    width: 100px;
+    height: 70px;
+    position: fixed;
+    bottom: 20px;
+    transform: scale(0.8);
+    transition: transform 0.5s;
+  }
+
+  #youtube {
+    display: block;
+    background: red;
+    right: 20px;
+    border-radius: 50% / 11%;
+  }
+
+  #youtube:hover,
+  #youtube:focus {
+    transform: scale(0.9);
+    color: black;
+  }
+
+  #youtube::before {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 7.5%;
+    left: -6%;
+    width: 112%;
+    height: 85%;
+    background: red;
+    border-radius: 9% / 50%;
+  }
+
+  #youtube::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    width: 45px;
+    height: 30px;
+    border: 15px solid transparent;
+    box-sizing: border-box;
+    border-left: 30px solid white;
+  }
+
+  #youtube span {
+    font-size: 0;
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  #youtube:hover + #youtube-card {
+    z-index: 49;
+    display: block;
+    position: fixed;
+    bottom: 12px;
+    width: 300px;
+    background-color: white;
+  }
+
+  #youtube:hover + #youtube-card {
+    right: 10px;
+    padding: 25px 130px 25px 25px;
+  }
+}
+
+#pause-menu {
+    position: absolute;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    background-color: rgba(20, 20, 20, 0.9);
+    z-index: 1000;
+}
+
+#high-score {
+    position: absolute;
+    color: white;
+    font-size: 1.5em;
+    font-weight: bold;
+    top: 30px;
+    left: 30px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    font-family: 'Montserrat', sans-serif;
+}
+
+@media (max-width: 768px) {
+    #score, #high-score {
+        font-size: 2em;
+    }
+    
+    #instructions .content,
+    #results .content,
+    #pause-menu .content {
+        padding: 25px;
+        max-width: 250px;
+    }
+}
+
+#instructions .content,
+#results .content,
+#pause-menu .content {
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+#score, #high-score, 
+#instructions .content p,
+#results .content p,
+#pause-menu .content p {
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px #00ffff, 0 0 20px #00ffff;
+    }
+    to {
+        text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #00ffff, 0 0 40px #00ffff;
+    }
+}
+
+#title-screen {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    background: linear-gradient(45deg, #1a1a1a, #2a2a2a);
+}
+
+#title-screen h1 {
+    font-size: 4em;
+    margin-bottom: 1em;
+    animation: titleGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from {
+        text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff1177, 0 0 40px #ff1177;
+    }
+    to {
+        text-shadow: 0 0 20px #fff, 0 0 30px #fff, 0 0 40px #00ffff, 0 0 50px #00ffff;
+    }
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+button {
+    background: transparent;
+    border: 2px solid #00ffff;
+    color: #fff;
+    padding: 1em 2em;
+    font-size: 1.2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Montserrat', sans-serif;
+    text-transform: uppercase;
+    border-radius: 5px;
+    min-width: 200px;
+}
+
+button:hover {
+    background: #00ffff;
+    color: #000;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal .content {
+    background: rgba(26, 26, 26, 0.9);
+    padding: 2em;
+    border-radius: 10px;
+    border: 2px solid #00ffff;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    max-width: 500px;
+    width: 90%;
+}
+
+.setting-item {
+    margin: 1em 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+select {
+    background: #2a2a2a;
+    border: 1px solid #00ffff;
+    color: #fff;
+    padding: 0.5em;
+    border-radius: 5px;
+}
+
+#game-ui {
+    position: fixed;
+    width: 100%;
+    pointer-events: none;
+}
+
+#instructions-menu ul {
+    text-align: left;
+    margin: 2em 0;
+    line-height: 1.6;
+}
+
+#score, #high-score {
+    pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+    #title-screen h1 {
+        font-size: 2.5em;
+    }
+    
+    button {
+        padding: 0.8em 1.6em;
+        font-size: 1em;
+        min-width: 160px;
+    }
+}
