@@ -197,6 +197,7 @@ function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
             triangleShape.lineTo(-width/2, -depth/2);
             
             const extrudeSettings = {
+                steps: 1,
                 depth: boxHeight,
                 bevelEnabled: false
             };
@@ -204,16 +205,10 @@ function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
             geometry = new THREE.ExtrudeGeometry(triangleShape, extrudeSettings);
             geometry.rotateX(Math.PI / 2); // Rotate to stand upright
             
-            // Create triangular physics shape
-            const vertices = [
-                new CANNON.Vec3(-width/2, -boxHeight/2, -depth/2),
-                new CANNON.Vec3(width/2, -boxHeight/2, -depth/2),
-                new CANNON.Vec3(0, -boxHeight/2, depth/2),
-                new CANNON.Vec3(-width/2, boxHeight/2, -depth/2),
-                new CANNON.Vec3(width/2, boxHeight/2, -depth/2),
-                new CANNON.Vec3(0, boxHeight/2, depth/2)
-            ];
-            shape = new CANNON.ConvexPolyhedron({ vertices });
+            // Create a simpler physics shape for the triangle (box with adjusted size)
+            shape = new CANNON.Box(
+                new CANNON.Vec3(width/2, boxHeight/2, depth/2)
+            );
             break;
             
         default: // BOX
@@ -221,6 +216,7 @@ function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
             shape = new CANNON.Box(
                 new CANNON.Vec3(width/2, boxHeight/2, depth/2)
             );
+            break;
     }
     
     // Neon color palette
@@ -328,12 +324,18 @@ function updateHighScore() {
     if (currentScore > highScore) {
         highScore = currentScore;
         localStorage.setItem('stackGameHighScore', highScore);
+        
         // Update UI to show new high score
-        if (resultsElement) {
-            const highScoreDiv = document.createElement('p');
-            highScoreDiv.innerText = `New High Score: ${highScore}!`;
-            resultsElement.querySelector('.content').appendChild(highScoreDiv);
+        const highScoreDisplay = document.getElementById('high-score-display');
+        if (highScoreDisplay) {
+            highScoreDisplay.innerHTML = `New High Score: ${highScore}!`;
         }
+    }
+    
+    // Update final score
+    const finalScoreElement = document.getElementById('final-score');
+    if (finalScoreElement) {
+        finalScoreElement.textContent = currentScore;
     }
 }
 
@@ -648,7 +650,8 @@ function initializeMenus() {
         soundToggle: document.getElementById('sound-toggle'),
         shapeSelector: document.getElementById('shape-selector'),
         backToMenuButton: document.getElementById('back-to-menu'),
-        pauseBackToMenuButton: document.getElementById('pause-back-to-menu')
+        pauseBackToMenuButton: document.getElementById('pause-back-to-menu'),
+        restartGameButton: document.getElementById('restart-game')
     };
 
     // Settings button
@@ -759,6 +762,15 @@ function initializeMenus() {
     }
     if (elements.soundToggle) {
         elements.soundToggle.checked = !sounds.stack.muted;
+    }
+
+    // Add restart game button handler
+    if (elements.restartGameButton) {
+        elements.restartGameButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            startGame();
+        });
     }
 }
 
