@@ -28,10 +28,9 @@ const difficultySettings = {
 
 // Add sound effects
 const sounds = {
-    stack: new Audio('sounds/stack.wav'),
-    fall: new Audio('sounds/fall.wav'),
-    gameOver: new Audio('sounds/gameOver.wav'),
-    backgroundMusic: new Audio('sounds/background.wav')
+    stack: new Audio('audio/stack.wav'),
+    fall: new Audio('audio/fall.wav'),
+    backgroundMusic: new Audio('audio/background.wav')
 };
 
 // Configure background music
