@@ -140,13 +140,13 @@ function addLayer(x, z, width, depth, direction) {
     stack.push(layer);
 }
 
-function addOverhang(x, z, width, depth) {
-    const y = boxHeight * (stack.length - 1); // Add the new box one the same layer
-    const overhang = generateBox(x, y, z, width, depth, true);
+function addOverhang(x, z, width, depth, color) {
+    const y = boxHeight * (stack.length - 1);
+    const overhang = generateBox(x, y, z, width, depth, true, color);
     overhangs.push(overhang);
 }
 
-function generateBox(x, y, z, width, depth, falls) {
+function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
     // ThreeJS
     const geometry = new THREE.BoxGeometry(width, boxHeight, depth);
     
@@ -160,7 +160,8 @@ function generateBox(x, y, z, width, depth, falls) {
         '#ff3131', // neon red
     ];
     
-    const color = new THREE.Color(neonColors[stack.length % neonColors.length]);
+    // Use inherited color if provided, otherwise get new color from palette
+    const color = inheritedColor || new THREE.Color(neonColors[stack.length % neonColors.length]);
     const material = new THREE.MeshLambertMaterial({ 
         color,
         emissive: color,
@@ -332,6 +333,9 @@ function splitBlockAndAddNextOneIfOverlaps() {
             sounds.stack.play().catch(e => console.log('Sound play failed'));
             cutBox(topLayer, overlap, size, delta);
 
+            // Get the color from the current top layer
+            const topLayerColor = topLayer.threejs.material.color;
+
             // Overhang
             const overhangShift = (overlap / 2 + overhangSize / 2) * Math.sign(delta);
             const overhangX =
@@ -345,7 +349,7 @@ function splitBlockAndAddNextOneIfOverlaps() {
             const overhangWidth = direction == "x" ? overhangSize : topLayer.width;
             const overhangDepth = direction == "z" ? overhangSize : topLayer.depth;
 
-            addOverhang(overhangX, overhangZ, overhangWidth, overhangDepth);
+            addOverhang(overhangX, overhangZ, overhangWidth, overhangDepth, topLayerColor);
 
             // Next layer
             const nextX = direction == "x" ? topLayer.threejs.position.x : -10;
