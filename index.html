@@ -9,7 +9,17 @@
 <body>
     <div id="title-screen">
         <div class="content">
-            <h1>NEON STACK</h1>
+            <h1>
+                <span style="color: #ff0000;">N</span>
+                <span style="color: #ff8000;">E</span>
+                <span style="color: #ffff00;">O</span>
+                <span style="color: #00ff00;">N</span>
+                <span style="color: #00ffff;">S</span>
+                <span style="color: #0000ff;">T</span>
+                <span style="color: #8000ff;">A</span>
+                <span style="color: #ff0080;">C</span>
+                <span style="color: #ff0000;">K</span>
+            </h1>
             <div class="menu-buttons">
                 <button id="play-button">PLAY</button>
                 <button id="settings-button">SETTINGS</button>
@@ -32,6 +42,14 @@
             <div class="setting-item">
                 <label for="sound-toggle">Sound:</label>
                 <input type="checkbox" id="sound-toggle" checked>
+            </div>
+            <div class="setting-item">
+                <label for="shape-selector">Shape:</label>
+                <select id="shape-selector">
+                    <option value="box">Box</option>
+                    <option value="circle">Circle</option>
+                    <option value="triangle">Triangle</option>
+                </select>
             </div>
             <button id="settings-back">Back</button>
         </div>

@@ -37,6 +37,14 @@ const scoreElement = document.getElementById("score");
 const instructionsElement = document.getElementById("instructions");
 const resultsElement = document.getElementById("results");
 
+// Add near the top with other constants
+const shapes = {
+    CIRCLE: 'circle',
+    TRIANGLE: 'triangle',
+    BOX: 'box'
+};
+let currentShape = shapes.BOX; // Default shape
+
 init();
 
 // Determines how precise the game is on autopilot
@@ -46,6 +54,7 @@ function setRobotPrecision() {
 }
 
 function init() {
+    // Initialize game state first
     autopilot = true;
     gameEnded = false;
     lastTime = 0;
@@ -54,9 +63,23 @@ function init() {
     setRobotPrecision();
     gameState = gameStates.READY;
 
+    // Initialize ThreeJS and CannonJS
+    initializeGraphics();
+    
+    // Initialize UI and event listeners
+    initializeMenus();
+    initializeEventListeners();
+    
+    // Initialize game elements last
+    initializeGame();
+    updateHighScoreDisplay();
+}
+
+// Separate graphics initialization
+function initializeGraphics() {
     // Initialize CannonJS
     world = new CANNON.World();
-    world.gravity.set(0, -10, 0); // Gravity pulls things down
+    world.gravity.set(0, -10, 0);
     world.broadphase = new CANNON.NaiveBroadphase();
     world.solver.iterations = 40;
 
@@ -66,35 +89,19 @@ function init() {
     const height = width / aspect;
 
     camera = new THREE.OrthographicCamera(
-        width / -2, // left
-        width / 2, // right
-        height / 2, // top
-        height / -2, // bottom
-        0, // near plane
-        100 // far plane
+        width / -2,
+        width / 2,
+        height / 2,
+        height / -2,
+        0,
+        100
     );
-
-    /*
-    // If you want to use perspective camera instead, uncomment these lines
-    camera = new THREE.PerspectiveCamera(
-        45, // field of view
-        aspect, // aspect ratio
-        1, // near plane
-        100 // far plane
-    );
-    */
 
     camera.position.set(4, 4, 4);
     camera.lookAt(0, 0, 0);
 
     scene = new THREE.Scene();
-    scene.background = new THREE.Color('#1a1a1a'); // Dark background for better neon contrast
-
-    // Foundation
-    addLayer(0, 0, originalBoxSize, originalBoxSize);
-
-    // First layer
-    addLayer(-10, 0, originalBoxSize, originalBoxSize, "x");
+    scene.background = new THREE.Color('#1a1a1a');
 
     // Set up lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
@@ -104,7 +111,6 @@ function init() {
     dirLight.position.set(10, 20, 0);
     scene.add(dirLight);
 
-    // Add point lights for more dramatic effect
     const pointLight1 = new THREE.PointLight(0xff1177, 0.5);
     pointLight1.position.set(10, 10, 10);
     scene.add(pointLight1);
@@ -126,6 +132,30 @@ function startGame() {
     }
     
     try {
+        autopilot = false;
+        gameState = gameStates.PLAYING;
+        
+        // Show game UI first
+        if (document.getElementById('game-ui')) {
+            document.getElementById('game-ui').style.display = 'block';
+        }
+        if (document.getElementById('title-screen')) {
+            document.getElementById('title-screen').style.display = 'none';
+        }
+        
+        // Update settings before starting
+        const shapeSelector = document.getElementById('shape-selector');
+        if (shapeSelector) {
+            setShape(shapeSelector.value);
+        }
+        
+        const difficultySelector = document.getElementById('difficulty');
+        if (difficultySelector) {
+            difficulty = difficultySelector.value;
+            setRobotPrecision();
+        }
+        
+        // Then restart the game
         restartGame();
     } catch (error) {
         console.error('Error starting game:', error);
@@ -148,7 +178,50 @@ function addOverhang(x, z, width, depth, color) {
 
 function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
     // ThreeJS
-    const geometry = new THREE.BoxGeometry(width, boxHeight, depth);
+    let geometry;
+    let shape;
+    
+    switch(currentShape) {
+        case shapes.CIRCLE:
+            // Create a cylinder (thick circle)
+            geometry = new THREE.CylinderGeometry(width/2, width/2, boxHeight, 32);
+            shape = new CANNON.Cylinder(width/2, width/2, boxHeight, 16);
+            break;
+            
+        case shapes.TRIANGLE:
+            // Create a triangular prism
+            const triangleShape = new THREE.Shape();
+            triangleShape.moveTo(-width/2, -depth/2);
+            triangleShape.lineTo(width/2, -depth/2);
+            triangleShape.lineTo(0, depth/2);
+            triangleShape.lineTo(-width/2, -depth/2);
+            
+            const extrudeSettings = {
+                depth: boxHeight,
+                bevelEnabled: false
+            };
+            
+            geometry = new THREE.ExtrudeGeometry(triangleShape, extrudeSettings);
+            geometry.rotateX(Math.PI / 2); // Rotate to stand upright
+            
+            // Create triangular physics shape
+            const vertices = [
+                new CANNON.Vec3(-width/2, -boxHeight/2, -depth/2),
+                new CANNON.Vec3(width/2, -boxHeight/2, -depth/2),
+                new CANNON.Vec3(0, -boxHeight/2, depth/2),
+                new CANNON.Vec3(-width/2, boxHeight/2, -depth/2),
+                new CANNON.Vec3(width/2, boxHeight/2, -depth/2),
+                new CANNON.Vec3(0, boxHeight/2, depth/2)
+            ];
+            shape = new CANNON.ConvexPolyhedron({ vertices });
+            break;
+            
+        default: // BOX
+            geometry = new THREE.BoxGeometry(width, boxHeight, depth);
+            shape = new CANNON.Box(
+                new CANNON.Vec3(width/2, boxHeight/2, depth/2)
+            );
+    }
     
     // Neon color palette
     const neonColors = [
@@ -160,7 +233,6 @@ function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
         '#ff3131', // neon red
     ];
     
-    // Use inherited color if provided, otherwise get new color from palette
     const color = inheritedColor || new THREE.Color(neonColors[stack.length % neonColors.length]);
     const material = new THREE.MeshLambertMaterial({ 
         color,
@@ -173,14 +245,17 @@ function generateBox(x, y, z, width, depth, falls, inheritedColor = null) {
     scene.add(mesh);
 
     // CannonJS
-    const shape = new CANNON.Box(
-        new CANNON.Vec3(width / 2, boxHeight / 2, depth / 2)
-    );
     let mass = falls ? 5 : 0;
     mass *= width / originalBoxSize;
     mass *= depth / originalBoxSize;
     const body = new CANNON.Body({ mass, shape });
     body.position.set(x, y, z);
+    
+    // For cylinders, we need to rotate the physics body to match the visual mesh
+    if (currentShape === shapes.CIRCLE) {
+        body.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), Math.PI / 2);
+    }
+    
     world.addBody(body);
 
     return {
@@ -274,11 +349,15 @@ function togglePause() {
 function initializeEventListeners() {
     const eventOptions = { passive: false };
     
-    window.addEventListener("mousedown", eventHandler, eventOptions);
-    window.addEventListener("touchstart", (e) => {
-        e.preventDefault();
-        eventHandler();
-    }, eventOptions);
+    // Only add game-specific click events to the canvas
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+        canvas.addEventListener("mousedown", eventHandler, eventOptions);
+        canvas.addEventListener("touchstart", (e) => {
+            e.preventDefault();
+            eventHandler();
+        }, eventOptions);
+    }
     
     window.addEventListener("keydown", function(event) {
         switch(event.key.toLowerCase()) {
@@ -524,6 +603,22 @@ function initializeGame() {
         camera.position.set(4, 4, 4);
         camera.lookAt(0, 0, 0);
     }
+
+    // Update shape selector to match current shape
+    const shapeSelector = document.getElementById('shape-selector');
+    if (shapeSelector) {
+        switch(currentShape) {
+            case shapes.CIRCLE:
+                shapeSelector.value = 'circle';
+                break;
+            case shapes.TRIANGLE:
+                shapeSelector.value = 'triangle';
+                break;
+            case shapes.BOX:
+                shapeSelector.value = 'box';
+                break;
+        }
+    }
 }
 
 // Add this to update the high score display
@@ -539,63 +634,154 @@ updateHighScoreDisplay();
 
 // Add these functions for menu handling
 function initializeMenus() {
-    // Play button
-    document.getElementById('play-button').addEventListener('click', () => {
-        document.getElementById('title-screen').style.display = 'none';
-        document.getElementById('game-ui').style.display = 'block';
-        startGame();
-    });
+    // Get all elements first
+    const elements = {
+        titleScreen: document.getElementById('title-screen'),
+        playButton: document.getElementById('play-button'),
+        settingsButton: document.getElementById('settings-button'),
+        instructionsButton: document.getElementById('instructions-button'),
+        settingsBack: document.getElementById('settings-back'),
+        instructionsBack: document.getElementById('instructions-back'),
+        settingsMenu: document.getElementById('settings-menu'),
+        instructionsMenu: document.getElementById('instructions-menu'),
+        difficulty: document.getElementById('difficulty'),
+        soundToggle: document.getElementById('sound-toggle'),
+        shapeSelector: document.getElementById('shape-selector'),
+        backToMenuButton: document.getElementById('back-to-menu'),
+        pauseBackToMenuButton: document.getElementById('pause-back-to-menu')
+    };
 
     // Settings button
-    document.getElementById('settings-button').addEventListener('click', () => {
-        document.getElementById('settings-menu').style.display = 'flex';
-    });
+    if (elements.settingsButton) {
+        elements.settingsButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (elements.settingsMenu) {
+                elements.settingsMenu.style.display = 'flex';
+            }
+        });
+    }
 
     // Instructions button
-    document.getElementById('instructions-button').addEventListener('click', () => {
-        document.getElementById('instructions-menu').style.display = 'flex';
-    });
+    if (elements.instructionsButton) {
+        elements.instructionsButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (elements.instructionsMenu) {
+                elements.instructionsMenu.style.display = 'flex';
+            }
+        });
+    }
 
     // Back buttons
-    document.getElementById('settings-back').addEventListener('click', () => {
-        document.getElementById('settings-menu').style.display = 'none';
-    });
+    if (elements.settingsBack) {
+        elements.settingsBack.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (elements.settingsMenu) {
+                elements.settingsMenu.style.display = 'none';
+            }
+        });
+    }
 
-    document.getElementById('instructions-back').addEventListener('click', () => {
-        document.getElementById('instructions-menu').style.display = 'none';
-    });
+    if (elements.instructionsBack) {
+        elements.instructionsBack.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            if (elements.instructionsMenu) {
+                elements.instructionsMenu.style.display = 'none';
+            }
+        });
+    }
 
-    // Difficulty selector
-    document.getElementById('difficulty').addEventListener('change', (e) => {
-        difficulty = e.target.value;
-        if (gameState === gameStates.PLAYING) {
-            // If game is in progress, restart with new difficulty
-            restartGame();
+    // Back to menu buttons
+    if (elements.backToMenuButton) {
+        elements.backToMenuButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showTitleScreen();
+        });
+    }
+
+    if (elements.pauseBackToMenuButton) {
+        elements.pauseBackToMenuButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            showTitleScreen();
+        });
+    }
+
+    // Play button
+    if (elements.playButton) {
+        elements.playButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            startGame();
+        });
+    }
+
+    // Prevent clicks on menus from triggering game events
+    [elements.settingsMenu, elements.instructionsMenu].forEach(menu => {
+        if (menu) {
+            menu.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            });
         }
     });
 
-    // Sound toggle
-    document.getElementById('sound-toggle').addEventListener('change', (e) => {
-        Object.values(sounds).forEach(sound => {
-            sound.muted = !e.target.checked;
+    // Add settings change handlers
+    if (elements.shapeSelector) {
+        elements.shapeSelector.addEventListener('change', function(e) {
+            setShape(e.target.value);
         });
-    });
+    }
 
-    // Back to menu buttons
-    document.getElementById('back-to-menu').addEventListener('click', showTitleScreen);
-    document.getElementById('pause-back-to-menu').addEventListener('click', showTitleScreen);
+    if (elements.difficulty) {
+        elements.difficulty.addEventListener('change', function(e) {
+            difficulty = e.target.value;
+            setRobotPrecision();
+        });
+    }
+
+    if (elements.soundToggle) {
+        elements.soundToggle.addEventListener('change', function(e) {
+            toggleMute();
+        });
+    }
+
+    // Initialize settings to match current state
+    if (elements.shapeSelector) {
+        elements.shapeSelector.value = currentShape;
+    }
+    if (elements.difficulty) {
+        elements.difficulty.value = difficulty;
+    }
+    if (elements.soundToggle) {
+        elements.soundToggle.checked = !sounds.stack.muted;
+    }
 }
 
 function showTitleScreen() {
-    document.getElementById('title-screen').style.display = 'flex';
-    document.getElementById('game-ui').style.display = 'none';
-    document.getElementById('results').style.display = 'none';
-    document.getElementById('pause-menu').style.display = 'none';
-    gameState = gameStates.READY;
+    if (document.getElementById('title-screen')) {
+        document.getElementById('title-screen').style.display = 'flex';
+    }
+    if (document.getElementById('game-ui')) {
+        document.getElementById('game-ui').style.display = 'none';
+    }
+    if (document.getElementById('results')) {
+        document.getElementById('results').style.display = 'none';
+    }
+    if (document.getElementById('pause-menu')) {
+        document.getElementById('pause-menu').style.display = 'none';
+    }
     
-    // Properly reset the game state
-    restartGame();
-    autopilot = true; // Set autopilot for title screen
+    gameState = gameStates.READY;
+    autopilot = true;
+    
+    // Clear any existing game state
+    clearScene();
+    initializeGame();
 }
 
 // Call this at the end of the file
@@ -621,7 +807,7 @@ function restartGame() {
         overhangs = [];
         isPaused = false;
         
-        // Initialize new game with current difficulty
+        // Initialize new game with current settings
         initializeGame();
         
         // Update game state
@@ -643,5 +829,26 @@ function restartGame() {
     } catch (error) {
         console.error('Error in restartGame:', error);
         gameState = gameStates.ENDED;
+    }
+}
+
+// Add these functions to switch shapes
+function setShape(shape) {
+    switch(shape.toLowerCase()) {
+        case 'circle':
+            currentShape = shapes.CIRCLE;
+            break;
+        case 'triangle':
+            currentShape = shapes.TRIANGLE;
+            break;
+        case 'box':
+        default:
+            currentShape = shapes.BOX;
+            break;
+    }
+    
+    // Only restart if game is in progress
+    if (gameState === gameStates.PLAYING) {
+        restartGame();
     }
 }
