@@ -28,10 +28,14 @@ const difficultySettings = {
 
 // Add sound effects
 const sounds = {
-    stack: new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA'),
-    fall: new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA'),
-    gameOver: new Audio('data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgA')
+    stack: new Audio('sounds/stack.wav'),
+    fall: new Audio('sounds/fall.wav'),
+    gameOver: new Audio('sounds/gameOver.wav'),
+    backgroundMusic: new Audio('sounds/background.wav')
 };
+
+// Configure background music
+sounds.backgroundMusic.loop = true;
 
 const scoreElement = document.getElementById("score");
 const instructionsElement = document.getElementById("instructions");
@@ -73,6 +77,8 @@ function init() {
     // Initialize game elements last
     initializeGame();
     updateHighScoreDisplay();
+
+    initializeBackgroundMusic();
 }
 
 // Separate graphics initialization
@@ -134,6 +140,11 @@ function startGame() {
     try {
         autopilot = false;
         gameState = gameStates.PLAYING;
+        
+        // Play background music if it's not already playing
+        if (sounds.backgroundMusic && sounds.backgroundMusic.paused) {
+            sounds.backgroundMusic.play().catch(e => console.log('Music play failed:', e));
+        }
         
         // Show game UI first
         if (document.getElementById('game-ui')) {
@@ -384,9 +395,18 @@ function initializeEventListeners() {
 }
 
 function toggleMute() {
+    const isMuted = !sounds.stack.muted;
     Object.values(sounds).forEach(sound => {
-        sound.muted = !sound.muted;
+        if (sound) {
+            sound.muted = isMuted;
+        }
     });
+    
+    // Update sound toggle in settings if it exists
+    const soundToggle = document.getElementById('sound-toggle');
+    if (soundToggle) {
+        soundToggle.checked = !isMuted;
+    }
 }
 
 function eventHandler() {
@@ -589,7 +609,7 @@ function clearScene() {
 // Initialize event listeners when the game starts
 initializeEventListeners();
 
-// Add this new function
+// Then, initialize the game
 function initializeGame() {
     // Reset score
     if (scoreElement) scoreElement.innerText = 0;
@@ -623,7 +643,7 @@ function initializeGame() {
     }
 }
 
-// Add this to update the high score display
+// Update high score display
 function updateHighScoreDisplay() {
     const highScoreElement = document.getElementById('high-score');
     if (highScoreElement) {
@@ -631,10 +651,9 @@ function updateHighScoreDisplay() {
     }
 }
 
-// Call this at the end of the file
 updateHighScoreDisplay();
 
-// Add these functions for menu handling
+// Menu handling
 function initializeMenus() {
     // Get all elements first
     const elements = {
@@ -794,12 +813,18 @@ function showTitleScreen() {
     // Clear any existing game state
     clearScene();
     initializeGame();
+
+    // Pause background music when returning to title
+    if (sounds.backgroundMusic) {
+        sounds.backgroundMusic.pause();
+        sounds.backgroundMusic.currentTime = 0;
+    }
 }
 
 // Call this at the end of the file
 initializeMenus();
 
-// Add this new function to handle game restart
+// Handle game restart
 function restartGame() {
     try {
         // Reset physics world
@@ -844,7 +869,7 @@ function restartGame() {
     }
 }
 
-// Add these functions to switch shapes
+// Switch shapes
 function setShape(shape) {
     switch(shape.toLowerCase()) {
         case 'circle':
@@ -862,5 +887,18 @@ function setShape(shape) {
     // Only restart if game is in progress
     if (gameState === gameStates.PLAYING) {
         restartGame();
+    }
+}
+
+// Handle Background Music
+function initializeBackgroundMusic() {
+    if (sounds.backgroundMusic) {
+        sounds.backgroundMusic.volume = 0.3; // Adjust volume (0.0 to 1.0)
+        
+        // Start playing when user interacts with the game
+        document.addEventListener('click', function startMusic() {
+            sounds.backgroundMusic.play().catch(e => console.log('Music play failed:', e));
+            document.removeEventListener('click', startMusic);
+        }, { once: true });
     }
 }
